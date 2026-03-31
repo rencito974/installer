@@ -86,8 +86,27 @@ if (!(Test-Path $subPath)) {
 }
 
 Log "LOG" "Extrayendo componentes en el directorio..."
-Expand-Archive -Path $subPath -DestinationPath $PluginsPath -Force *>$null
+$tempExtract = Join-Path $env:TEMP "steamnexus_extract"
+if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
+Expand-Archive -Path $subPath -DestinationPath $tempExtract -Force *>$null
+
+
+$extractedContent = Get-ChildItem $tempExtract
+if ($extractedContent.Count -eq 1 -and $extractedContent[0].PSIsContainer) {
+
+    $sourceDir = $extractedContent[0].FullName
+} else {
+    $sourceDir = $tempExtract
+}
+
+
+$destDir = Join-Path $PluginsPath $name
+if (Test-Path $destDir) { Remove-Item $destDir -Recurse -Force }
+Copy-Item -Path $sourceDir -Destination $destDir -Recurse -Force
+
 Remove-Item $subPath -ErrorAction SilentlyContinue
+Remove-Item $tempExtract -Recurse -ErrorAction SilentlyContinue
+
 
 Log "OK" "SteamNexus instalado correctamente."
 
